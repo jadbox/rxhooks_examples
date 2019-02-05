@@ -1,5 +1,5 @@
 {
-  "name": "hooks_example",
+  "name": "rxhooks",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -7,9 +7,13 @@
     "@types/node": "10.12.21",
     "@types/react": "16.8.1",
     "@types/react-dom": "16.0.11",
-    "react": "^16.7.0",
-    "react-dom": "^16.7.0",
+    "callbag-basics": "^3.0.1",
+    "react": "^16.8.0-alpha.1",
+    "react-dom": "^16.8.0-alpha.1",
+    "react-hooks-fetch": "^0.7.0",
+    "react-hot-loader": "^4.6.5",
     "react-scripts": "2.1.3",
+    "rxjs": "^6.4.0",
     "typescript": "3.3.1"
   },
   "scripts": {

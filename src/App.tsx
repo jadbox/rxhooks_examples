@@ -1,24 +1,81 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
+import React, { Component, useState, useEffect, useRef, useCallback, useReducer } from 'react';
 import './App.css';
+import { delay, take, shareReplay, map, reduce } from 'rxjs/operators';
+import { from, interval, Observable, of } from 'rxjs';
+import { useFetch } from 'react-hooks-fetch';
+
+function incCount(setFn:(f:any)=>void, count:any) {
+  return () => setFn(count+1)
+}
+
+function useRx<T, X>(stream: (c:X) => Observable<T>, data:X, fn?:any) {
+  
+  
+  // By default, replace data from last stream
+  if(!fn) fn = (state:any, next:any) => next;
+
+  // Reduce over streams source changes
+  function reducer(state:any, action:any) {
+    switch (action.type) {
+      case 'step':
+        return fn(state, action.val);
+      default:
+        return state;
+    }
+  }
+  // input
+  const [state, dispatch] = useReducer(reducer, data);
+
+  // Final Output
+  const [_state, _setState] = useState<T | undefined>(undefined);
+  
+
+  useEffect( () => {
+    console.log('new stream')
+    const s = stream(state)
+      .subscribe( x => _setState(x) );
+    return () => s.unsubscribe();
+  }, [stream, state]);
+  
+  return [state, (x:any) => dispatch({type:'step', val: x})];
+}
+
+function stream(c:number) {
+  // return of(c);
+  return interval(1000*c);
+}
+
+function HelloWorld() {
+  const [speed, setSpeed] = useState(1);
+  const [count] = useRx( stream, speed );
+  
+  return <>
+    <button onClick={() => setSpeed(speed+1)}>Slower</button>
+    <p>speed {speed}{' '}|{' '}count {count}</p>
+  </>
+}
+
+function HelloWorld3() {
+  const reducer = (prev:any, val:any) => prev + val;
+  const [count, signalCount] = useRx( stream, 1, reducer );
+
+  const onClick = () => {
+    signalCount(1);
+  }
+  
+  return <>
+    <button onClick={onClick}>Slower</button>
+    <p>count {count}</p>
+  </>
+}
 
 class App extends Component {
+
   render() {
     return (
       <div className="App">
         <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.tsx</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
+          <HelloWorld3/>
         </header>
       </div>
     );
@@ -26,3 +83,62 @@ class App extends Component {
 }
 
 export default App;
+
+function HelloWorld2() {
+  const [speed, setSpeed] = useState(0.5);
+  const [count] = useRxCallback( speed, stream, map((x:any)=>x*2) );
+  
+  return <>
+    <button onClick={incCount(setSpeed, speed)}>Slower</button>
+    <p>speed {speed}{' '}|{' '}count {count}</p>
+  </>
+}
+
+function useRxCallback2<T, X>(data:X) {
+  const [state, setState] = useState<any>(null);
+  const [obs, obsState] = useState<X | null>(null);
+
+  let stream = (x:X) => {
+    obsState(x);
+  };
+  useEffect( () => {
+    if(!obs) return;
+    const s = of(obs).subscribe( x => setState(x) );
+    return () => s.unsubscribe();
+  }, [data, obs]);
+  
+  return [state, stream]
+}
+
+function useRxCallback<T, X>(data:X, stream: (c:X) => Observable<T>, transform: any) {
+  const [state, setState] = useState<any>(null);
+  const ref = useRef<any>(null);
+
+  useEffect(() => {
+    ref.current = transform;
+  });
+
+  useEffect( () => {
+    const src = stream(data);
+    const op = ref.current ? 
+        src.pipe(ref.current)
+      : src;
+
+    const s = op.subscribe( x => setState(x) )
+    return () => s.unsubscribe();
+  }, [data, transform]);
+  
+  return [state]
+}
+
+function useRx2<T, X>(stream: (c:X) => Observable<T>, data:X) {
+  const [state, setState] = useState<any>(null);
+
+  useEffect( () => {
+    console.log('useEffect')
+    const s = stream(data).subscribe( x => setState(x) );
+    return () => s.unsubscribe();
+  }, [data, stream]);
+  
+  return [state]
+}
