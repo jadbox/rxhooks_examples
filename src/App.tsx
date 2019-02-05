@@ -37,12 +37,12 @@ function useRx<T, X>(stream: (c:X) => Observable<T>, data:X, fn?:any) {
     return () => s.unsubscribe();
   }, [stream, state]);
   
-  return [state, (x:any) => dispatch({type:'step', val: x})];
+  return [_state, (x:any) => dispatch({type:'step', val: x})];
 }
 
 function stream(c:number) {
   // return of(c);
-  return interval(1000*c);
+  return interval(1000).pipe(map(x=>'c ' + c + ' x ' + x));
 }
 
 function HelloWorld() {
@@ -56,8 +56,9 @@ function HelloWorld() {
 }
 
 function HelloWorld3() {
-  const reducer = (prev:any, val:any) => prev + val;
+  const reducer = (prev:any, val:any) => val;
   const [count, signalCount] = useRx( stream, 1, reducer );
+  if(!count) return null;
 
   const onClick = () => {
     signalCount(1);
