@@ -8,7 +8,7 @@ function incCount(setFn:(f:any)=>void, count:any) {
   return () => setFn(count+1)
 }
 
-function useRx<T, X>(stream: (c:X) => Observable<T>, data:X, fn?:any) {
+function useRx<T, X>(stream: (c:X) => Observable<T>, data:X, fn?:any): [T, (x:X) =>void] {
   
   
   // By default, replace data from last stream
@@ -18,7 +18,9 @@ function useRx<T, X>(stream: (c:X) => Observable<T>, data:X, fn?:any) {
   function reducer(state:any, action:any) {
     switch (action.type) {
       case 'step':
-        return fn(state, action.val);
+        const step = fn(state, action.val);
+        console.log('new state', step);
+        return step;
       default:
         return state;
     }
@@ -37,12 +39,13 @@ function useRx<T, X>(stream: (c:X) => Observable<T>, data:X, fn?:any) {
     return () => s.unsubscribe();
   }, [stream, state]);
   
-  return [_state, (x:any) => dispatch({type:'step', val: x})];
+  const setRx = (x:any) => dispatch({type:'step', val: x});
+  return [_state as T, setRx];
 }
 
 function stream(c:number) {
   // return of(c);
-  return interval(1000).pipe(map(x=>'c ' + c + ' x ' + x));
+  return interval(1000).pipe(map( (x:number) => x + c )); // .pipe(map(x=>'c ' + c + ' x ' + x));
 }
 
 function HelloWorld() {
@@ -57,11 +60,12 @@ function HelloWorld() {
 
 function HelloWorld3() {
   const reducer = (prev:any, val:any) => val;
-  const [count, signalCount] = useRx( stream, 1, reducer );
+  const [count, signalCount] = useRx( stream, 1 as number, reducer );
   if(!count) return null;
 
   const onClick = () => {
-    signalCount(1);
+    console.log('1 + count', 1 + count)
+    signalCount(10 + count);
   }
   
   return <>
