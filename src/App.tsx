@@ -6,9 +6,9 @@ import { interval, Observable, fromEvent, OperatorFunction } from 'rxjs';
 import { EventEmitter } from 'events';
 
 /*
-  useRx is a hook that takes a Observable (via a function that returns one) and useRx returns [currentStreamOutput] to use the output value in your component.
-  The stream will rerun anytime the second paramater "data" is changed.
-  onErr and onComplete parameters are callbacks for those stream states
+  useRx is a hook that takes an Observable factory function and returns [currentStreamOutput] for use in your component.
+  The stream will rerun anytime the initialValue is changed.
+  The onErr and onComplete parameters are callbacks to handle those stream states
 */
 function useRx<T, X>(stream: (c:X) => Observable<T>, initialValue:X, onErr?:(error: any) => void, onComplete?:()=>void):[T] { 
   // Output state
@@ -25,8 +25,9 @@ function useRx<T, X>(stream: (c:X) => Observable<T>, initialValue:X, onErr?:(err
 
 /*
   useRxState allows adding items to an Rx stream that is created for you.
-  The pipes parameter allows passing in Rx operators to work with internal source stream.
-  onErr and onComplete parameters are callbacks for those stream states
+  The stream will rerun anytime the initialValue is changed.
+  The pipes parameter allows passing in Rx operators to work upon the internal source stream.
+  The onErr and onComplete parameters are callbacks to handle those stream states
 */
 function useRxState<T, X>(initialValue:X, pipes:OperatorFunction<any,any>, onErr?:(error: any) => void, onComplete?:()=>void):[T,(x:X) => void] { 
   // input to stream
