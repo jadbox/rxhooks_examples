@@ -40,19 +40,20 @@ function useRxState<T, X>(initialValue:X, pipes:OperatorFunction<any,any>, onErr
     var input$ = fromEvent(emitterRef.current, 'event');
     const s = input$
               .pipe(pipes)
-              .subscribe((x:any)=>_setState(x));
+              .subscribe((x)=>_setState(x));
     emitterRef.current!.emit('event', initialValue);
     return () => s.unsubscribe();
   }, [initialValue]);
   
-  const setRx = (x:any) => {
+  const setRx = (x:X) => {
     emitterRef.current!.emit('event', x)
   }
   return [state as T, setRx];
 }
 
 function ExampleUseRxState() {
-  const [count, signalCount] = useRxState(1 as number, 
+  const initialValue:number = 1;
+  const [count, signalCount] = useRxState(initialValue, 
     scan( (acc:any, x:any)=>x+acc, 0) 
   );
 
@@ -67,7 +68,7 @@ function ExampleUseRxState() {
 }
 
 function ExampleUseRx() {
-  const stream = (x:any) => interval(1000 * x);
+  const stream = (x:number) => interval(1000 * x);
 
   const [speed, setSpeed] = useState(1);
   const [count] = useRx( stream, speed );
