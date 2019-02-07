@@ -1,6 +1,6 @@
 ## Just Show Me the Code
 
-```
+```javascript
 function ExampleUseRxState() {
   const [count, signalCount] = useRxState(1 as number, 
     scan( (acc:any, x:any)=>x+acc, 0) 
