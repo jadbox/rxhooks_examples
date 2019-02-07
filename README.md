@@ -3,7 +3,7 @@
 ```javascript
 function ExampleUseRxState() {
   const [count, signalCount] = useRxState(1 as number, 
-    scan( (acc:any, x:any)=>x+acc, 0) 
+    scan( (acc, x) => x+acc, 0) 
   );
 
   const onClick = () => {
@@ -17,7 +17,7 @@ function ExampleUseRxState() {
 }
 
 function ExampleUseRx() {
-  const stream = (x:any) => interval(1000 * x);
+  const stream = (x) => interval(1000 * x);
 
   const [speed, setSpeed] = useState(1);
   const [count] = useRx( stream, speed );
