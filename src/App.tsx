@@ -54,7 +54,7 @@ function useRxState<T, X>(initialValue:X, pipes:OperatorFunction<any,any>, onErr
 function ExampleUseRxState() {
   const initialValue:number = 1;
   const [count, signalCount] = useRxState(initialValue, 
-    scan( (acc:any, x:any)=>x+acc, 0) 
+    scan( (acc, x)=>x+acc, 0) 
   );
 
   const onClick = () => {
