@@ -1,63 +1,67 @@
 import React, { Component, useState, useEffect, useRef, useCallback, useReducer } from 'react';
 import './App.css';
-import { delay, take, shareReplay, map, reduce, zip, mergeMap, tap, scan } from 'rxjs/operators';
-import { from, interval, Observable, of, fromEvent } from 'rxjs';
-import { useFetch } from 'react-hooks-fetch';
+// import { useFetch } from 'react-hooks-fetch';
+import { scan } from 'rxjs/operators';
+import { interval, Observable, fromEvent, OperatorFunction } from 'rxjs';
 import { EventEmitter } from 'events';
 
-function incCount(setFn:(f:any)=>void, count:any) {
-  return () => setFn(count+1)
+/*
+  useRx is a hook that takes a Observable (via a function that returns one) and useRx returns [currentStreamOutput] to use the output value in your component.
+  The stream will rerun anytime the second paramater "data" is changed.
+  onErr and onComplete parameters are callbacks for those stream states
+*/
+function useRx<T, X>(stream: (c:X) => Observable<T>, initialValue:X, onErr?:(error: any) => void, onComplete?:()=>void):[T] { 
+  // Output state
+  const [_state, _setState] = useState<T | undefined>(undefined);
+
+  useEffect( () => {
+    const s = stream(initialValue)
+      .subscribe( x => _setState(x), onErr, onComplete );
+    return () => s.unsubscribe();
+  }, [initialValue]);
+  
+  return [_state as T];
 }
 
-function useRxState<T, X>(d:X, pipes:any) { 
+/*
+  useRxState allows adding items to an Rx stream that is created for you.
+  The pipes parameter allows passing in Rx operators to work with internal source stream.
+  onErr and onComplete parameters are callbacks for those stream states
+*/
+function useRxState<T, X>(initialValue:X, pipes:OperatorFunction<any,any>, onErr?:(error: any) => void, onComplete?:()=>void):[T,(x:X) => void] { 
   // input to stream
   const ref = useRef<EventEmitter | null>(null);
 
-  // const [state, setState] = useState(d);
-
-  // Final Output
+  // Output state
   const [_state, _setState] = useState<T | undefined>(undefined);
-  // console.log('_state', _state)
 
   useEffect( () => {
 
   }, [_state]);
-  // let em:any;
-  // let input$:Observable<any>;
 
   useEffect( () => {
     console.log('new stream')
     ref.current = new EventEmitter();
     var input$ = fromEvent(ref.current, 'event');
     const s = input$
-             // .pipe(tap(x=>console.log('steam$',x)))
               .pipe(pipes)
-              .subscribe((x:any)=>_setState(x)); // .pipe(pipes$())
-    ref.current!.emit('event', d); // em.emit('event', 1);
+              .subscribe((x:any)=>_setState(x));
+    ref.current!.emit('event', initialValue);
     return () => s.unsubscribe();
-  }, []);
+  }, [initialValue]);
   
   const setRx = (x:any) => {
-    console.log('emit', x)
     ref.current!.emit('event', x)
-    // setState(x);
   }
-  // setState(x);
-  return [_state as T, setRx] as [T, typeof setRx];
+  return [_state as T, setRx];
 }
 
-function HelloWorld3() {
+function ExampleUseRxState() {
   const [count, signalCount] = useRxState(1 as number, 
     scan( (acc:any, x:any)=>x+acc, 0) 
   );
 
-  // const [counta, signalCounta] = useRx(1 as number, 
-   //  (c:any) => reduce( (acc:any, x:any)=>x+acc, 0) 
-  // );
-  // if(!count) return null;
-
   const onClick = () => {
-    // console.log('1 + count', 1 + count)
     signalCount(1);
   }
   
@@ -67,23 +71,7 @@ function HelloWorld3() {
   </>
 }
 
-class App extends Component {
-
-  render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <HelloWorld3/>
-          <HelloWorld/>
-        </header>
-      </div>
-    );
-  }
-}
-
-export default App;
-
-function HelloWorld() {
+function ExampleUseRx() {
   const stream = (x:any) => interval(1000 * x);
 
   const [speed, setSpeed] = useState(1);
@@ -95,20 +83,18 @@ function HelloWorld() {
   </>
 }
 
-function useRx<T, X>(stream: (c:X) => Observable<T>, data:X, onErr?:any, onComplete?:any): [T] {
-  // input
-  // const [state, setState] = useState(data);
-  // console.log('speed', state)
+class App extends Component {
 
-  // Final Output
-  const [_state, _setState] = useState<T | undefined>(undefined);
-  
-
-  useEffect( () => {
-    const s = stream(data)
-      .subscribe( x => _setState(x), onErr, onComplete );
-    return () => s.unsubscribe();
-  }, [data]);
-  
-  return [_state as T];
+  render() {
+    return (
+      <div className="App">
+        <header className="App-header">
+          <ExampleUseRxState/>
+          <ExampleUseRx/>
+        </header>
+      </div>
+    );
+  }
 }
+
+export default App;
