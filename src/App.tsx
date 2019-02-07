@@ -12,15 +12,15 @@ import { EventEmitter } from 'events';
 */
 function useRx<T, X>(stream: (c:X) => Observable<T>, initialValue:X, onErr?:(error: any) => void, onComplete?:()=>void):[T] { 
   // Output state
-  const [_state, _setState] = useState<T | undefined>(undefined);
+  const [outState, _setOutState] = useState<T | undefined>(undefined);
 
   useEffect( () => {
     const s = stream(initialValue)
-      .subscribe( x => _setState(x), onErr, onComplete );
+      .subscribe( x => _setOutState(x), onErr, onComplete );
     return () => s.unsubscribe();
   }, [initialValue]);
   
-  return [_state as T];
+  return [outState as T];
 }
 
 /*
@@ -30,30 +30,25 @@ function useRx<T, X>(stream: (c:X) => Observable<T>, initialValue:X, onErr?:(err
 */
 function useRxState<T, X>(initialValue:X, pipes:OperatorFunction<any,any>, onErr?:(error: any) => void, onComplete?:()=>void):[T,(x:X) => void] { 
   // input to stream
-  const ref = useRef<EventEmitter | null>(null);
+  const emitterRef = useRef<EventEmitter | null>(null);
 
   // Output state
-  const [_state, _setState] = useState<T | undefined>(undefined);
+  const [state, _setState] = useState<T | undefined>(undefined);
 
   useEffect( () => {
-
-  }, [_state]);
-
-  useEffect( () => {
-    console.log('new stream')
-    ref.current = new EventEmitter();
-    var input$ = fromEvent(ref.current, 'event');
+    emitterRef.current = new EventEmitter();
+    var input$ = fromEvent(emitterRef.current, 'event');
     const s = input$
               .pipe(pipes)
               .subscribe((x:any)=>_setState(x));
-    ref.current!.emit('event', initialValue);
+    emitterRef.current!.emit('event', initialValue);
     return () => s.unsubscribe();
   }, [initialValue]);
   
   const setRx = (x:any) => {
-    ref.current!.emit('event', x)
+    emitterRef.current!.emit('event', x)
   }
-  return [_state as T, setRx];
+  return [state as T, setRx];
 }
 
 function ExampleUseRxState() {
@@ -66,7 +61,7 @@ function ExampleUseRxState() {
   }
   
   return <>
-    <button onClick={onClick}>Slower</button>
+    <button onClick={onClick}>Add 1</button>
     <p>count {count}</p>
   </>
 }
@@ -78,7 +73,7 @@ function ExampleUseRx() {
   const [count] = useRx( stream, speed );
   
   return <>
-    <button onClick={() => setSpeed(speed+1)}>Slower</button>
+    <button onClick={() => setSpeed(speed+1)}>Make slower via initialValue change</button>
     <p>speed {speed}{' '}|{' '}count {count}</p>
   </>
 }
@@ -89,8 +84,9 @@ class App extends Component {
     return (
       <div className="App">
         <header className="App-header">
-          <ExampleUseRxState/>
           <ExampleUseRx/>
+          <br/>
+          <ExampleUseRxState/>
         </header>
       </div>
     );
