@@ -2,7 +2,8 @@
 
 ```javascript
 function ExampleUseRxState() {
-  const [count, signalCount] = useRxState(1 as number, 
+  const initialVal = 1;
+  const [count, signalCount] = useRxState(initialVal, 
     scan( (acc, x) => x+acc, 0) 
   );
 
